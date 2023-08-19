@@ -13,14 +13,14 @@ const productRouter = express.Router();
 
 productRouter.post("/add-product", auth, addProduct);
 
-productRouter.get("/get-products-cat", auth, getProductCat);
+productRouter.post("/get-products-cat", auth, getProductCat);
 
-productRouter.get("/get-products", auth, getProducts);
+productRouter.post("/get-products", auth, getProducts);
 
 productRouter.delete("/delete-product", auth, deleteProduct);
 
 productRouter.put("/update-product", auth, updateProduct);
 
-productRouter.get("/get-product", getProduct);
+productRouter.post("/get-product", getProduct);
 
 export default productRouter;

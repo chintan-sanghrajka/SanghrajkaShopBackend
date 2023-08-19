@@ -30,7 +30,7 @@ const UserModel = new Schema({
   },
   otp: {
     type: Number,
-    default: 0,
+    default: null,
   },
   contact: {
     type: Number,
@@ -38,7 +38,7 @@ const UserModel = new Schema({
   },
   role: {
     // 1: Admin 2: User 3: Vendor
-    type: Number,
+    type: String,
     required: true,
   },
   vendorCompany: {

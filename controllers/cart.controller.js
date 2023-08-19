@@ -4,22 +4,24 @@ import ProductModel from "./../models/product.model.js";
 // Testing Done
 export const addProduct = async (req, res) => {
   try {
-    const { productId } = req.body;
-    const userId = req.cookies.user._id;
+    const { productId, userId } = req.body;
     const oldProduct = await CartModel.findOne({
       userId: userId,
       productId: productId,
+      status: 1,
     });
     if (oldProduct) {
       if (oldProduct.count === 10) {
-        res.status(400).json({
+        res.status(200).json({
           message: "Only 10 items are allowed.",
+          max: true,
         });
       } else {
         const updateProduct = await CartModel.updateOne(
           {
             userId: userId,
             productId: productId,
+            status: 1,
           },
           {
             $set: {
@@ -30,6 +32,7 @@ export const addProduct = async (req, res) => {
         if (updateProduct.acknowledged) {
           res.status(200).json({
             message: "Count updated successfully.",
+            max: false,
           });
         }
       }
@@ -43,6 +46,7 @@ export const addProduct = async (req, res) => {
       if (product) {
         res.status(201).json({
           message: "Product added to Cart successfully.",
+          max: false,
         });
       }
     }
@@ -54,8 +58,7 @@ export const addProduct = async (req, res) => {
 };
 // Testing Done
 export const getProduct = async (req, res) => {
-  const { page, limit } = req.body;
-  const userId = req.cookies.user._id;
+  const { page, limit, userId } = req.body;
   const skipNo = Number(page) === 1 ? 0 : (Number(page) - 1) * limit;
   try {
     // const product = await CartModel.find({
@@ -86,8 +89,11 @@ export const getProduct = async (req, res) => {
         $project: {
           count: "$count",
           name: "$product.name",
+          description: "$product.description",
           price: "$product.price",
+          stock: "$product.stock",
           thumbnail: "$product.thumbnail",
+          productId: "$productId",
         },
       },
       {
@@ -115,13 +121,13 @@ export const getProduct = async (req, res) => {
 };
 // Testing Done
 export const deleteProduct = async (req, res) => {
-  const { productId } = req.body;
-  const userId = req.cookies.user._id;
+  const { cartId } = req.body;
+  console.log(cartId);
   try {
-    const product = CartModel.updateOne(
+    const product = await CartModel.updateOne(
       {
-        userId: userId,
-        productId: productId,
+        _id: cartId,
+        status: 1,
       },
       {
         $set: {
@@ -129,7 +135,7 @@ export const deleteProduct = async (req, res) => {
         },
       }
     );
-    if ((await product).acknowledged) {
+    if (product.acknowledged) {
       res.status(200).json({
         message: "Product deleted successfully.",
       });
@@ -142,12 +148,12 @@ export const deleteProduct = async (req, res) => {
 };
 // Testing Done
 export const updateProduct = async (req, res) => {
-  const { productId, action } = req.body;
-  const userId = req.cookies.user._id;
+  const { productId, action, userId } = req.body;
   try {
     const product = await CartModel.findOne({
       userId: userId,
       productId: productId,
+      status: 1,
     });
     if (action === "inc") {
       if (product.count === 10) {
@@ -156,7 +162,7 @@ export const updateProduct = async (req, res) => {
         });
       } else {
         const newProduct = await CartModel.updateOne(
-          { userId: userId, productId: productId },
+          { userId: userId, productId: productId, status: 1 },
           {
             $set: {
               count: product.count + 1,
@@ -176,6 +182,7 @@ export const updateProduct = async (req, res) => {
           {
             userId: userId,
             productId: productId,
+            status: 1,
           },
           {
             $set: {
@@ -193,6 +200,7 @@ export const updateProduct = async (req, res) => {
           {
             userId: userId,
             productId: productId,
+            status: 1,
           },
           {
             $set: {
@@ -215,22 +223,21 @@ export const updateProduct = async (req, res) => {
 };
 // Testing Done
 export const buyProduct = async (req, res) => {
-  const { productId, count } = req.body;
+  const { productId, count, userId } = req.body;
   try {
     const [product] = await ProductModel.find({
       _id: productId,
     });
     const currStock = product.stock;
-    console.log(product.stock);
     if (product.stock < count) {
       res.status(400).json({
         message: "Product out of Stock.",
       });
     } else {
-      console.log("Hii");
       const product = await ProductModel.updateOne(
         {
           _id: productId,
+          status: 1,
         },
         {
           $set: {
@@ -239,10 +246,28 @@ export const buyProduct = async (req, res) => {
         }
       );
       if (product.acknowledged) {
-        res.status(200).json({
-          message: "Order placed successfully.",
-          remainingCount: product.stock,
-        });
+        const cart = await CartModel.updateOne(
+          {
+            userId: userId,
+            productId: productId,
+            status: 1,
+          },
+          {
+            $set: {
+              status: 9,
+            },
+          }
+        );
+        if (cart.acknowledged) {
+          res.status(200).json({
+            message: "Order placed successfully.",
+            remainingCount: product.stock,
+          });
+        } else {
+          res.status(500).json({
+            message: "Some error occurred.",
+          });
+        }
       }
     }
   } catch (error) {

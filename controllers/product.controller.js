@@ -84,14 +84,10 @@ export const addProduct = (req, res) => {
 };
 // Testing Done
 export const getProductCat = async (req, res) => {
-  const cookieData = req.cookies.user._id;
-  console.log(cookieData);
-  const { subCategoryId, page, limit } = req.body;
-  const userId = req.cookies.user._id;
-  const role = req.cookies.user.role;
+  const { subCategoryId, page, limit, userId, role } = req.body;
   const skipNo = Number(page) === 1 ? 0 : (Number(page) - 1) * limit;
   try {
-    if (Number(role) === 2) {
+    if (role === "user") {
       const productList = await ProductModel.find({
         subCategoryId: subCategoryId,
         status: 1,
@@ -107,7 +103,7 @@ export const getProductCat = async (req, res) => {
         message: `products fetched successfully.`,
         productCount: productCount.length,
       });
-    } else if (Number(role) === 3) {
+    } else if (role === "vendor") {
       const productList = await ProductModel.find({
         status: 1,
         vendorId: userId,
@@ -134,9 +130,7 @@ export const getProductCat = async (req, res) => {
 };
 // Testing Done
 export const getProducts = async (req, res) => {
-  const { keys, page, limit } = req.body;
-  const userId = req.cookies.user._id;
-  const role = req.cookies.user.role;
+  const { keys, page, limit, userId, role } = req.body;
   const skipNo = Number(page) === 1 ? 0 : (Number(page) - 1) * limit;
   try {
     const rgx = (pattern) => new RegExp(`.*${pattern}.*`);
@@ -149,7 +143,7 @@ export const getProducts = async (req, res) => {
         $or: [{ keys: { $regex: searchRgx, $options: "i" } }],
       };
     }
-    if (Number(role) === 2) {
+    if (role === "user") {
       const productsList = await ProductModel.find(filterConfig)
         .limit(limit)
         .skip(skipNo);
@@ -161,11 +155,14 @@ export const getProducts = async (req, res) => {
         message: "products fetched successfully.",
         productCount: productCount.length,
       });
-    } else if (Number(role) === 3) {
-      const productList = await ProductModel.find({
-        ...filterConfig,
-        vendorId: userId,
-      })
+    } else if (role === "vendor") {
+      const productList = await ProductModel.find(
+        {
+          ...filterConfig,
+          vendorId: userId,
+        },
+        { name: 1, description: 1, price: 1, stock: 1, thumbnail: 1, _id: 1 }
+      )
         .limit(limit)
         .skip(skipNo);
       const productCount = await ProductModel.find({
@@ -275,7 +272,7 @@ export const updateProduct = async (req, res) => {
 // Testing done
 export const getProduct = async (req, res) => {
   try {
-    const { productId } = req.query;
+    const { productId } = req.body;
     const product = await ProductModel.find({
       _id: productId,
     });

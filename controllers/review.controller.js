@@ -1,8 +1,7 @@
 import ReviewModel from "../models/review.model.js";
 // Testing done
 export const addReview = async (req, res) => {
-  const { productId, review } = req.body;
-  const userName = req.cookies.user.userName;
+  const { productId, review, userName } = req.body;
   const date = new Date();
   const createdDate =
     date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();

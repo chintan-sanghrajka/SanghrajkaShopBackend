@@ -5,6 +5,7 @@ import {
   deleteUser,
   getUserWithOTP,
   getUser,
+  sendEmailWithOTP,
 } from "../controllers/user.controller.js";
 import auth from "./../middleware/auth.middleware.js";
 

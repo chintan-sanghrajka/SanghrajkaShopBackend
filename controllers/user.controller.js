@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import nodemailer from "nodemailer";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -38,20 +39,23 @@ export const checkUser = async (req, res) => {
       ],
     });
     if (oldUser) {
-      res.status(409).json({
+      res.status(200).json({
         message: "User already exists.",
+        status: false,
       });
     } else {
       const oldEmail = await UserModel.findOne({
         $and: [{ emailId: emailId }, { status: 1 }],
       });
       if (oldEmail) {
-        res.status(409).json({
+        res.status(200).json({
           message: "Email already exists.",
+          status: false,
         });
       } else {
         res.status(200).json({
           message: "User not found.",
+          status: true,
         });
       }
     }
@@ -81,7 +85,6 @@ export const addUser = async (req, res) => {
       if (req.file !== undefined) {
         avatar = req.file.filename;
       }
-
       const newPassword = bcrypt.hashSync(password, 10);
       const newUser = new UserModel({
         firstName: firstName,
@@ -153,15 +156,16 @@ export const getUser = async (req, res) => {
             process.env.SECRET_KEY,
             { expiresIn: "1h" }
           );
-          res.cookie("user", user);
           res.status(200).json({
             message: "User Successfully logged in.",
             user: user,
             token: token,
+            id: 4,
           });
         } else {
-          res.status(400).json({
+          res.status(200).json({
             message: "Invalid Password.",
+            id: 2,
           });
         }
       } else if (action === "otp") {
@@ -173,20 +177,25 @@ export const getUser = async (req, res) => {
           { $set: { otp: userOTP } }
         );
         if (userWithOTP.acknowledged) {
+          sendEmailWithOTP(user.userName, user.emailId, userOTP);
+          expireOTP(userName);
           res.status(200).json({
             message: "User found, OTP authentication pending.",
-            userOTP: userOTP,
+            // userOTP: userOTP,
+            id: 4,
+            user: user,
           });
         } else {
           res.status(500).json({
             message: "some error occured.",
           });
         }
-        expireOTP(userName);
+        // expireOTP(userName);
       }
     } else {
-      res.status(400).json({
+      res.status(200).json({
         message: "User Not Found",
+        id: 1,
       });
     }
   } catch (error) {
@@ -211,10 +220,12 @@ export const getUserWithOTP = async (req, res) => {
         user: user,
         message: "User authenticated Successfully",
         token: token,
+        id: 4,
       });
     } else {
-      res.status(400).json({
+      res.status(200).json({
         message: "Invalid OTP.",
+        id: 3,
       });
     }
   } catch (error) {
@@ -225,7 +236,7 @@ export const getUserWithOTP = async (req, res) => {
 };
 // Testing Done
 const expireOTP = (userName) => {
-  setTimeout(() => updateOTP(userName), 60000);
+  setTimeout(() => updateOTP(userName), 300000);
 };
 // Testing Done
 const updateOTP = async (userName) => {
@@ -233,8 +244,37 @@ const updateOTP = async (userName) => {
     { userName: userName, status: 1 },
     {
       $set: {
-        otp: 0,
+        otp: null,
       },
     }
   );
+};
+
+const sendEmailWithOTP = async (userName, userEmail, userOTP) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "sanghrajka.chintan@gmail.com",
+      pass: "geccbbmvgckimbkz",
+    },
+  });
+  try {
+    let info = await transporter.sendMail({
+      from: "Sanghrajka Shop",
+      to: userEmail,
+      subject: "OTP for Login",
+      html: `
+      <div>
+      <p>Dear ${userName},</p>
+        <p>Please find below OTP to login into your account.</p>
+        <h1 style="font-size: 40px; letter-spacing: 2px; text-align:center;">${userOTP}</h1>
+        <p>Note this OTP is valid only for 5 minute</p>
+      <p>Thanks and Regards,</p>
+      <p>Team SS</p>
+      </div>
+      `,
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
 };

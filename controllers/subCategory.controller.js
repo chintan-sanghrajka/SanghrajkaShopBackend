@@ -60,7 +60,7 @@ export const addSubCategory = (req, res) => {
 };
 // Testing Done
 export const getSubCategories = async (req, res) => {
-  const { categoryId } = req.query;
+  const { categoryId } = req.body;
   try {
     const subCategories = await SubCategoryModel.find({
       status: 1,
@@ -68,7 +68,7 @@ export const getSubCategories = async (req, res) => {
     });
     res.status(200).json({
       message: "Sub-Categories Fetched Successfully.",
-      data: subCategories,
+      subCategories: subCategories,
     });
   } catch (error) {
     res.status(500).json({

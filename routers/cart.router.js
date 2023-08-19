@@ -12,9 +12,9 @@ const cartRouter = express.Router();
 
 cartRouter.post("/add-product-to-cart", auth, addProduct);
 
-cartRouter.get("/get-cart-product", auth, getProduct);
+cartRouter.post("/get-cart-products", auth, getProduct);
 
-cartRouter.delete("/delete-from-cart", auth, deleteProduct);
+cartRouter.post("/delete-from-cart", auth, deleteProduct);
 
 cartRouter.put("/update-cart", auth, updateProduct);
 

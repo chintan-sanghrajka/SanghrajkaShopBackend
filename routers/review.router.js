@@ -10,7 +10,7 @@ const reviewRouter = express.Router();
 
 reviewRouter.post("/add-review", auth, addReview);
 
-reviewRouter.get("/get-reviews", auth, getReview);
+reviewRouter.post("/get-reviews", auth, getReview);
 
 reviewRouter.delete("/delete-review", auth, deleteReview);
 

@@ -11,7 +11,7 @@ import auth from "./../middleware/auth.middleware.js";
 
 subCategoryRouter.post("/add-sub-category", auth, addSubCategory);
 
-subCategoryRouter.get("/get-sub-categories", auth, getSubCategories);
+subCategoryRouter.post("/get-sub-categories", auth, getSubCategories);
 
 subCategoryRouter.get("/get-sub-category", auth, getSubCategory);
 
